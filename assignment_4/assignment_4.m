@@ -1,5 +1,5 @@
 E = csvread('example2.dat');
-k = 3;
+k = 4;
 
 col1 = E(:,1);
 col2 = E(:,2);
