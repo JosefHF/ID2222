@@ -72,7 +72,7 @@ public class Jabeja {
         
       // swap with random neighbors
       // TODO
-      partner = findPartner(nodeId, getNeighbors(nodep))
+      partner = findPartner(nodeId, getNeighbors(nodep));
        
     }
 
@@ -81,7 +81,7 @@ public class Jabeja {
       // if local policy fails then randomly sample the entire graph
       // TODO
       if(partner==null){
-        partner = findPartner(nodeId, getSample(nodeId))
+        partner = findPartner(nodeId, getSample(nodeId));
       } 
     }
 
@@ -90,6 +90,7 @@ public class Jabeja {
       int nodeColor = nodep.getColor();
       partner.setColor(nodeColor);
       nodep.setColor(partnerColor);
+      numberOfSwaps += 1;
     }
     saCoolDown();
 
@@ -102,15 +103,16 @@ public class Jabeja {
     Node bestPartner = null;
     double highestBenefit = 0;
     // TODO
-      for(Node q : nodes){
+      for(int q : nodes){
+          Node q_node = entireGraph.get(q); 
           int dpp = getDegree(nodep,nodep.getColor());
-          int dqq = getDegree(q, q.getColor());
+          int dqq = getDegree(q_node, q_node.getColor());
           int old = dpp + dqq;
-          int dpq = getdegree(nodep, q.getColor());
-          int dqp = getDegree(q, nodep.getColor());
+          int dpq = getDegree(nodep, q_node.getColor());
+          int dqp = getDegree(q_node, nodep.getColor());
           int neww = dpq+dqp;
           if((neww*T > old) && (neww > highestBenefit)){
-              bestPartner = q;
+              bestPartner = q_node;
               highestBenefit = neww;
               
           } 
