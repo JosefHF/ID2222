@@ -9,6 +9,7 @@ import se.kth.jabeja.rand.RandNoGenerator;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.lang.Math.*;
 
 public class Jabeja {
   final static Logger logger = Logger.getLogger(Jabeja.class);
@@ -17,9 +18,10 @@ public class Jabeja {
   private final List<Integer> nodeIds;
   private int numberOfSwaps;
   private int round;
-  private float T;
+  private double T;
   private boolean resultFileCreated = false;
   private float delta;
+  private float TMin;
 
   //-------------------------------------------------------------------
   public Jabeja(HashMap<Integer, Node> graph, Config config) {
@@ -30,6 +32,7 @@ public class Jabeja {
     this.config = config;
     this.T = config.getTemperature();
     this.delta = config.getDelta();
+    this.TMin = (float) 0.00001;
   }
 
 
@@ -44,6 +47,9 @@ public class Jabeja {
       //reduce the temperature
       saCoolDown();
       report();
+      if(round%150 == 0){
+        T = 1;
+      }
     }
   }
 
@@ -52,10 +58,18 @@ public class Jabeja {
    */
   private void saCoolDown(){
     // TODO for second task
-    if (T > 1)
-      T -= config.getDelta();
-    if (T < 1)
-      T = 1;
+    //if (T > 1)
+    //  T -= config.getDelta();
+    //else{
+    //  T = 1;
+    //}
+    if(T>TMin){
+      T = T-config.getDelta();
+    }
+    else{
+      T = TMin;
+    }
+      
   }
 
   /**
@@ -66,7 +80,6 @@ public class Jabeja {
     Node partner = null;
     Node nodep = entireGraph.get(nodeId);
     
-
     if (config.getNodeSelectionPolicy() == NodeSelectionPolicy.HYBRID
             || config.getNodeSelectionPolicy() == NodeSelectionPolicy.LOCAL) {
         
@@ -84,16 +97,15 @@ public class Jabeja {
         partner = findPartner(nodeId, getSample(nodeId));
       } 
     }
-
-    if(partner != null){
+    
+    if(T>TMin && partner != null){
       int partnerColor = partner.getColor();
       int nodeColor = nodep.getColor();
       partner.setColor(nodeColor);
       nodep.setColor(partnerColor);
       numberOfSwaps += 1;
     }
-    saCoolDown();
-
+    
   }
 
   public Node findPartner(int nodeId, Integer[] nodes){
@@ -107,20 +119,33 @@ public class Jabeja {
           Node q_node = entireGraph.get(q); 
           int dpp = getDegree(nodep,nodep.getColor());
           int dqq = getDegree(q_node, q_node.getColor());
-          int old = dpp + dqq;
+          double old = Math.pow(dpp,config.getAlpha())+Math.pow(dqq,config.getAlpha());
           int dpq = getDegree(nodep, q_node.getColor());
           int dqp = getDegree(q_node, nodep.getColor());
-          int neww = dpq+dqp;
+          double neww = Math.pow(dpq,config.getAlpha())+Math.pow(dqp,config.getAlpha());
+          
           if((neww*T > old) && (neww > highestBenefit)){
               bestPartner = q_node;
               highestBenefit = neww;
               
-          } 
+          }
+
+          else if(old > neww){
+            double accaptanceProbbility = getAcceptanceProbability(old,neww);
+            if(accaptanceProbbility > Math.random()){
+              bestPartner = q_node;
+              highestBenefit = neww;
+            }
+          }
+
       }
       
     return bestPartner;
   }
 
+  private double getAcceptanceProbability(double old, double neww){
+    return Math.exp((neww-old)/T);
+  }
   /**
    * The the degreee on the node based on color
    * @param node
